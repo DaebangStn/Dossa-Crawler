@@ -1,0 +1,4 @@
+<resources>
+    <string name="app_name">Dossa Crawler</string>
+    <string name="url_base">http://m.corearoadbike.com</string>
+</resources>
