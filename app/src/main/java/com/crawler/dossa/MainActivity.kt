@@ -1,12 +1,8 @@
 package com.crawler.dossa
 
-import android.content.Context
-import android.content.Intent
-import android.content.SharedPreferences
+import android.content.*
 import android.net.Uri
-import android.os.Bundle
-import android.os.Environment
-import android.os.PowerManager
+import android.os.*
 import android.provider.Settings
 import android.text.method.KeyListener
 import android.util.Log
@@ -17,13 +13,33 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
-import java.io.BufferedReader
-import java.io.File
-import java.io.InputStreamReader
 
 
 class MainActivity : AppCompatActivity() {
+    private val mHandler = Handler(Looper.getMainLooper())
+    private lateinit var textRunnable: Runnable
+
+    private lateinit var mService: CrawlerService
+    private var mBound: Boolean = false
+
+    private val connection = object : ServiceConnection{
+        override fun onServiceConnected(p0: ComponentName?, p1: IBinder?) {
+            val binder = p1 as CrawlerService.CrawlerBinder
+            mService = binder.getService()
+            mBound = true
+            Log.d("APP", "Service Connected")
+
+            startLog()
+        }
+        override fun onServiceDisconnected(p0: ComponentName?) {
+            mBound = false
+            Log.d("APP", "Service Crashed")
+        }
+    }
+
+    private var period: Long? = null
     private val PERIOD_DEFAULT: Long = 10
+    private val MAX_LINE: Int = 50
 
     private val btnListener= View.OnClickListener { p0 ->
         lateinit var url: String
@@ -56,11 +72,11 @@ class MainActivity : AppCompatActivity() {
         val prevPeriod = preferences.getLong("PERIOD", PERIOD_DEFAULT)
 
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
-        var intent = Intent()
+        val powerManagerIntent: Intent
         if(!powerManager.isIgnoringBatteryOptimizations(packageName)){
             Log.e("APP", "system does not ignore battery optimization")
-            intent = Intent().setAction(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
-            startActivity(intent);
+            powerManagerIntent = Intent().setAction(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
+            startActivity(powerManagerIntent)
         }
 
         textUrl.setText(prevUrl)
@@ -87,13 +103,11 @@ class MainActivity : AppCompatActivity() {
 
                 editor.putLong("PERIOD", textPeriod.text.toString().toLong())
                 editor.putString("URL", textUrl.text.toString())
-                editor.commit()
-
-                var period: Long?
+                editor.apply()
 
                 try {
                     period = textPeriod.text.toString().toLong()
-                    if (period <= 0){
+                    if (period!! <= 0){
                         throw IndexOutOfBoundsException()
                     }
                 } catch (e: Exception){
@@ -101,21 +115,72 @@ class MainActivity : AppCompatActivity() {
                     period = PERIOD_DEFAULT
                 }
 
-                val intent = Intent(applicationContext, CrawlerService::class.java)
+                val crawlerIntent = Intent(applicationContext, CrawlerService::class.java)
                     .putExtra("requestUrl", textUrl.text.toString())
                     .putExtra("period", period)
 
-                startForegroundService(intent)
-
+                bindService(crawlerIntent, connection, Context.BIND_AUTO_CREATE)
             }else{
                 Log.d("VIEW", "switchCrawler unchecked")
                 textUrl.keyListener = textUrl.tag as KeyListener
                 textPeriod.keyListener = textPeriod.tag as KeyListener
 
-                val intent = Intent(applicationContext, CrawlerService::class.java)
-                stopService(intent)
+                if(mBound){
+                    stopLog()
+                    unbindService(connection)
+                    mBound = false
+
+                    Log.d("APP", "Service Disconnected")
+                }
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+//        if(mBound) startLog()
+    }
+
+    override fun onStop() {
+        super.onStop()
+//        stopLog()
+    }
+
+    private fun startLog(){
+        val textLog: TextView = findViewById(R.id.textLog)
+        textRunnable = Runnable {
+            val logArrayList = mService.getLogs()
+            logArrayList.forEach{textLog.append(it)}
+            val excessNumber = textLog.lineCount - MAX_LINE
+            if(excessNumber > 0){
+                var eolIndex = -1
+                val charSequence: CharSequence = textLog.text
+                for (i in 0 until excessNumber) {
+                    do {
+                        eolIndex++
+                    } while (eolIndex < charSequence.length && charSequence[eolIndex] != '\n')
+                }
+                if (eolIndex < charSequence.length) {
+                    textLog.editableText.delete(0, eolIndex + 1)
+                } else {
+                    textLog.text = ""
+                }
+
+                Log.d("APP", "Log overflowed remove last")
             }
 
+            Log.d("APP", "Log updated")
+            mHandler.postDelayed(textRunnable, (period?:5) * 500)
         }
+
+        mHandler.post(textRunnable)
+        Log.d("APP", "Log started")
+    }
+
+    private fun stopLog(){
+        val textLog: TextView = findViewById(R.id.textLog)
+        textLog.text = ""
+        mHandler.removeCallbacks(textRunnable)
+        Log.d("APP", "Log stopped")
     }
 }

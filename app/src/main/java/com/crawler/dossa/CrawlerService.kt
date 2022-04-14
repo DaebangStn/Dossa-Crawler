@@ -1,5 +1,6 @@
 package com.crawler.dossa
 
+import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
@@ -13,17 +14,26 @@ import org.jsoup.Jsoup
 import org.jsoup.nodes.Document
 import org.jsoup.select.Elements
 import java.text.SimpleDateFormat
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 import java.util.*
+import kotlin.collections.ArrayList
 
 class CrawlerService: Service() {
-    private var lastUrl: String? = null
+    private val crawlerBinder = CrawlerBinder()
 
-    private var serviceLooper: Looper? = null
+    private var lastUrl: String? = null
+    private val logArrayList: ArrayList<String> = ArrayList()
+
     private var serviceHandler: Handler? = null
-    private lateinit var runnable: Runnable
+    private var runnable: Runnable? = null
 
     private val NOTIFICATION_CHANNEL_SERVICE = "crawler service"
     private val NOTIFICATION_CHANNEL_FOUND = "crawler found"
+
+    inner class CrawlerBinder: Binder(){
+        fun getService(): CrawlerService = this@CrawlerService
+    }
 
     override fun onCreate() {
         val pendingIntent: PendingIntent = Intent(this, MainActivity::class.java).let {
@@ -44,26 +54,37 @@ class CrawlerService: Service() {
 
         startForeground(1337, notification)
 
-        HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_BACKGROUND).apply {
+        HandlerThread("ServiceStartArguments", Process.THREAD_PRIORITY_DEFAULT).apply {
             start()
-            serviceLooper = looper
             serviceHandler = Handler(looper)
         }
+    }
+
+    override fun onDestroy() {
+        Toast.makeText(this, "Crawler shutdown", Toast.LENGTH_SHORT).show()
+        runnable?.let { serviceHandler?.removeCallbacks(it) }
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Toast.makeText(this, "Crawler start", Toast.LENGTH_SHORT).show()
         runnable = Runnable {
             val url = intent!!.extras!!.getString("requestUrl")
-            val period = intent!!.extras!!.getLong("period")
+            val period = intent.extras!!.getLong("period")
 
             Log.i("CRAWLER", "handler running. url $url, period $period")
             httpTask(url!!, period)
-            serviceHandler?.postDelayed(runnable, period* 1000)
+            serviceHandler?.postDelayed(runnable!!, period* 1000)
         }
 
-        serviceHandler?.post(runnable)
+        serviceHandler?.post(runnable!!)
         return START_STICKY
+    }
+
+    fun getLogs(): ArrayList<String> {
+        val array = ArrayList<String>()
+        logArrayList.forEach{array.add(it)}
+        logArrayList.clear()
+        return array
     }
 
     private fun httpTask(url: String, period: Long){
@@ -105,6 +126,8 @@ class CrawlerService: Service() {
                         manager.notify(1, notification)
                     }else{
                         Log.w("DOSSA", "there is no satisfying item")
+                        val timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+                        logArrayList.add("[$timeNow] <$postTitle> posted $timeDelayed before.\n")
                     }
                 }catch (e: Exception){
                     Log.e("DOSSA", e.toString())
@@ -154,30 +177,36 @@ class CrawlerService: Service() {
 
         // for mobile page
         val elements = doc.getElementsByTag("td")
-        val strUpload = elements[312].text()
+        val strUpload = elements[310].text()
         /*
         // for pc page
         val elements = doc.getElementsByClass("small_99")
         val strUpload = elements[0].text().split("|")[1].replace(" ", "")
         */
-        Log.d("DOSSA", "recent post uploaded time $strUpload length ${elements.size}")
+        Log.d("DOSSA", "recent post uploaded time $strUpload")
         return if(strUpload.contains(":")){
-            val fmt = SimpleDateFormat("HH:mm:ss")
+            val fmt = SimpleDateFormat("HH:mm:ss", Locale.getDefault())
             val timeCurrent = fmt.parse(fmt.format(Date()))
             val timeUpload = fmt.parse(strUpload)
-            (timeCurrent.time - timeUpload.time) / 1000
+            (timeCurrent!!.time - timeUpload!!.time) / 1000
         }else{
             Log.d("DOSSA", "post is not uploaded recently")
-            9999999
+            9999
         }
     }
 
-    override fun onDestroy() {
-        Toast.makeText(this, "Crawler shutdown", Toast.LENGTH_SHORT).show()
-        serviceHandler?.removeCallbacks(runnable)
-    }
+    override fun onBind(p0: Intent?): IBinder {
+        Toast.makeText(this, "Crawler start", Toast.LENGTH_SHORT).show()
+        runnable = Runnable {
+            val url = p0!!.extras!!.getString("requestUrl")
+            val period = p0.extras!!.getLong("period")
 
-    override fun onBind(p0: Intent?): IBinder? {
-        return null
+            Log.i("CRAWLER", "handler running. url $url, period $period")
+            httpTask(url!!, period)
+            serviceHandler?.postDelayed(runnable!!, period* 1000)
+        }
+
+        serviceHandler?.post(runnable!!)
+        return crawlerBinder
     }
 }
