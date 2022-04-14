@@ -1,124 +1,142 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout
+
+<androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:weightSum="10"
-    android:orientation="vertical"
     tools:context=".MainActivity">
 
-    <RelativeLayout
+    <LinearLayout
+        android:orientation="vertical"
+        android:weightSum="10"
         android:layout_width="match_parent"
-        android:layout_weight="1"
-        android:layout_height="0dp">
+        android:layout_height="match_parent">
 
-        <TextView
-            android:id="@+id/textUrlInd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginHorizontal="50dp"
-            android:text="Url" />
-
-        <EditText
-            android:id="@+id/textUrl"
-            android:layout_width="100dp"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginHorizontal="20dp"
-            android:layout_toEndOf="@id/textUrlInd"
-            android:hint="중고장터 url"
-            android:inputType="textUri" />
-
-        <Button
-            android:id="@+id/btnUrlReset"
-            android:layout_toRightOf="@+id/textUrl"
-            android:layout_marginHorizontal="20dp"
-            android:layout_centerVertical="true"
-            android:text="reset"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_weight="1"
-        android:layout_height="0dp">
-
-        <TextView
-            android:id="@+id/textPeriodInd"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerVertical="true"
-            android:layout_marginHorizontal="50dp"
-            android:text="Period" />
-
-        <EditText
-            android:id="@+id/textPeriod"
-            android:layout_width="wrap_content"
-            android:layout_toEndOf="@id/textPeriodInd"
-            android:layout_marginHorizontal="50dp"
-            android:layout_centerVertical="true"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:hint="초 단위" />
-
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <androidx.appcompat.widget.SwitchCompat
-            android:id="@+id/switchCrawler"
-            android:layout_centerVertical="true"
-            android:layout_centerHorizontal="true"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Crawler On" />
-
-    </RelativeLayout>
-
-    <RelativeLayout
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1">
-
-        <Button
-            android:id="@+id/btnDossa"
-            android:text="goto Dossa"
-            android:layout_centerVertical="true"
-            android:layout_marginHorizontal="20dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-        <Button
-            android:id="@+id/btnUrl"
-            android:text="goto URL"
-            android:layout_toRightOf="@+id/btnDossa"
-            android:layout_centerVertical="true"
-            android:layout_marginHorizontal="20dp"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"/>
-
-    </RelativeLayout>
-
-    <ScrollView
-        android:scrollbars="vertical"
-        android:fillViewport="true"
-        android:layout_weight="6"
-        android:layout_width="match_parent"
-        android:layout_height="0dp">
-        <TextView
-            android:id="@+id/textLog"
-            android:textColor="#0F0"
+        <RelativeLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_weight="1"
+            android:layout_height="0dp">
 
-    </ScrollView>
+            <TextView
+                android:id="@+id/textUrlInd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginHorizontal="50dp"
+                android:text="Url" />
 
-</LinearLayout>
+            <EditText
+                android:id="@+id/textUrl"
+                android:layout_width="100dp"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginHorizontal="20dp"
+                android:layout_toEndOf="@id/textUrlInd"
+                android:hint="중고장터 url"
+                android:inputType="textUri" />
+
+            <Button
+                android:id="@+id/btnUrlReset"
+                android:layout_toRightOf="@+id/textUrl"
+                android:layout_marginHorizontal="20dp"
+                android:layout_centerVertical="true"
+                android:text="reset"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="0dp">
+
+            <TextView
+                android:id="@+id/textPeriodInd"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerVertical="true"
+                android:layout_marginHorizontal="50dp"
+                android:text="Period" />
+
+            <EditText
+                android:id="@+id/textPeriod"
+                android:layout_width="wrap_content"
+                android:layout_toEndOf="@id/textPeriodInd"
+                android:layout_marginHorizontal="50dp"
+                android:layout_centerVertical="true"
+                android:layout_height="wrap_content"
+                android:inputType="number"
+                android:hint="초 단위" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <androidx.appcompat.widget.SwitchCompat
+                android:id="@+id/switchCrawler"
+                android:layout_centerVertical="true"
+                android:layout_centerHorizontal="true"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Crawler On" />
+
+        </RelativeLayout>
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="1">
+
+            <Button
+                android:id="@+id/btnDossa"
+                android:text="goto Dossa"
+                android:textSize="10sp"
+                android:layout_centerVertical="true"
+                android:layout_marginHorizontal="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <Button
+                android:id="@+id/btnUrl"
+                android:text="goto URL"
+                android:textSize="10sp"
+                android:layout_toRightOf="@+id/btnDossa"
+                android:layout_centerVertical="true"
+                android:layout_marginHorizontal="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+
+            <Button
+                android:id="@+id/btnSetting"
+                android:text="Setting"
+                android:textSize="10sp"
+                android:layout_toRightOf="@+id/btnUrl"
+                android:layout_centerVertical="true"
+                android:layout_marginHorizontal="20dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+        </RelativeLayout>
+
+        <ScrollView
+            android:scrollbars="vertical"
+            android:fillViewport="true"
+            android:layout_weight="6"
+            android:layout_width="match_parent"
+            android:layout_height="0dp">
+            <TextView
+                android:id="@+id/textLog"
+                android:textColor="#0F0"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"/>
+
+        </ScrollView>
+
+    </LinearLayout>
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

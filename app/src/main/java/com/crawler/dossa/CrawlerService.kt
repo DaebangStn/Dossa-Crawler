@@ -1,6 +1,5 @@
 package com.crawler.dossa
 
-import android.annotation.SuppressLint
 import android.app.*
 import android.content.Context
 import android.content.Intent
@@ -30,6 +29,8 @@ class CrawlerService: Service() {
 
     private val NOTIFICATION_CHANNEL_SERVICE = "crawler service"
     private val NOTIFICATION_CHANNEL_FOUND = "crawler found"
+
+    private var tagPosition: Int = 310
 
     inner class CrawlerBinder: Binder(){
         fun getService(): CrawlerService = this@CrawlerService
@@ -67,8 +68,9 @@ class CrawlerService: Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Toast.makeText(this, "Crawler start", Toast.LENGTH_SHORT).show()
+        tagPosition = intent!!.extras!!.getInt("tagPosition")
         runnable = Runnable {
-            val url = intent!!.extras!!.getString("requestUrl")
+            val url = intent.extras!!.getString("requestUrl")
             val period = intent.extras!!.getLong("period")
 
             Log.i("CRAWLER", "handler running. url $url, period $period")
@@ -127,14 +129,20 @@ class CrawlerService: Service() {
                     }else{
                         Log.w("DOSSA", "there is no satisfying item")
                         val timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
-                        logArrayList.add("[$timeNow] <$postTitle> posted $timeDelayed before.\n")
+                        logArrayList.add("[$timeNow] <$postTitle> on (${findDate(response)})\n")
                     }
                 }catch (e: Exception){
                     Log.e("DOSSA", e.toString())
+                    val timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+                    logArrayList.add("[$timeNow] Error on crawler.\n")
                     Toast.makeText(this, "Error on crawler $e", Toast.LENGTH_SHORT).show()
                 }
             },
-            { error -> Log.w("CRAWLER", "error on request $error") }
+            { error ->
+                Log.e("CRAWLER", "Error on request $error")
+                val timeNow = LocalDateTime.now().format(DateTimeFormatter.ofPattern("HH:mm:ss"))
+                logArrayList.add("[$timeNow] Error on request $error.\n")
+            }
         ){
             override fun getHeaders(): MutableMap<String, String> {
                 val header = HashMap<String, String>()
@@ -177,7 +185,7 @@ class CrawlerService: Service() {
 
         // for mobile page
         val elements = doc.getElementsByTag("td")
-        val strUpload = elements[310].text()
+        val strUpload = elements[tagPosition].text()
         /*
         // for pc page
         val elements = doc.getElementsByClass("small_99")
@@ -195,10 +203,26 @@ class CrawlerService: Service() {
         }
     }
 
+    private fun findDate(response: String): String {
+        val doc = Jsoup.parse(response)
+
+        // for mobile page
+        val elements = doc.getElementsByTag("td")
+        /*
+        // for pc page
+        val elements = doc.getElementsByClass("small_99")
+        val strUpload = elements[0].text().split("|")[1].replace(" ", "")
+        */
+
+        return elements[tagPosition].text()
+    }
+
+
     override fun onBind(p0: Intent?): IBinder {
         Toast.makeText(this, "Crawler start", Toast.LENGTH_SHORT).show()
+        tagPosition = p0!!.extras!!.getInt("tagPosition")
         runnable = Runnable {
-            val url = p0!!.extras!!.getString("requestUrl")
+            val url = p0.extras!!.getString("requestUrl")
             val period = p0.extras!!.getLong("period")
 
             Log.i("CRAWLER", "handler running. url $url, period $period")

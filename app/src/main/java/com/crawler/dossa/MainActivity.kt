@@ -1,5 +1,6 @@
 package com.crawler.dossa
 
+import android.app.Dialog
 import android.content.*
 import android.net.Uri
 import android.os.*
@@ -11,8 +12,10 @@ import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
+import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import kotlin.properties.Delegates
 
 
 class MainActivity : AppCompatActivity() {
@@ -39,7 +42,9 @@ class MainActivity : AppCompatActivity() {
 
     private var period: Long? = null
     private val PERIOD_DEFAULT: Long = 10
+    private val TAG_POSITION_DEFAULT: Int = 310
     private val MAX_LINE: Int = 50
+    private var tagPosition: Int = TAG_POSITION_DEFAULT
 
     private val btnListener= View.OnClickListener { p0 ->
         lateinit var url: String
@@ -65,11 +70,13 @@ class MainActivity : AppCompatActivity() {
         val btnDossa: Button = findViewById(R.id.btnDossa)
         val btnUrl: Button = findViewById(R.id.btnUrl)
         val btnUrlReset: Button = findViewById(R.id.btnUrlReset)
+        val btnSetting: Button = findViewById(R.id.btnSetting)
 
         val preferences: SharedPreferences = getPreferences(Context.MODE_PRIVATE)
         val editor: SharedPreferences.Editor = preferences.edit()
         val prevUrl = preferences.getString("URL", "")
         val prevPeriod = preferences.getLong("PERIOD", PERIOD_DEFAULT)
+        tagPosition = preferences.getInt("TagPosition", TAG_POSITION_DEFAULT)
 
         val powerManager = getSystemService(Context.POWER_SERVICE) as PowerManager
         val powerManagerIntent: Intent
@@ -84,6 +91,25 @@ class MainActivity : AppCompatActivity() {
 
         btnDossa.setOnClickListener(btnListener)
         btnUrl.setOnClickListener(btnListener)
+
+        btnSetting.setOnClickListener{
+            val dialogView = layoutInflater.inflate(R.layout.dialog_setting, null)
+            val textTagPosition: TextView = dialogView.findViewById(R.id.textTagPosition)
+            val alertDialog = AlertDialog.Builder(this).setView(dialogView)
+                .setPositiveButton("Ok") { _, _ ->
+                    tagPosition = textTagPosition.text.toString().toInt()
+                    editor.putInt("TagPosition", tagPosition)
+                    Log.d("DIALOG", "tag position updated to $tagPosition")
+                }.setNegativeButton("Cancel") { _, _ ->
+
+                }.setNeutralButton("Reset") { _, _ ->
+                    textTagPosition.text = TAG_POSITION_DEFAULT.toString()
+                    Log.d("DIALOG", "tag position reset to $TAG_POSITION_DEFAULT")
+                }.create()
+
+            textTagPosition.text = tagPosition.toString()
+            alertDialog.show()
+        }
 
         btnUrlReset.setOnClickListener{
             if(!switchCrawler.isChecked){
@@ -118,6 +144,7 @@ class MainActivity : AppCompatActivity() {
                 val crawlerIntent = Intent(applicationContext, CrawlerService::class.java)
                     .putExtra("requestUrl", textUrl.text.toString())
                     .putExtra("period", period)
+                    .putExtra("tagPosition", tagPosition)
 
                 bindService(crawlerIntent, connection, Context.BIND_AUTO_CREATE)
             }else{
@@ -136,18 +163,9 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-//        if(mBound) startLog()
-    }
-
-    override fun onStop() {
-        super.onStop()
-//        stopLog()
-    }
-
     private fun startLog(){
         val textLog: TextView = findViewById(R.id.textLog)
+        textLog.text = ""
         textRunnable = Runnable {
             val logArrayList = mService.getLogs()
             logArrayList.forEach{textLog.append(it)}
@@ -179,7 +197,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun stopLog(){
         val textLog: TextView = findViewById(R.id.textLog)
-        textLog.text = ""
         mHandler.removeCallbacks(textRunnable)
         Log.d("APP", "Log stopped")
     }
